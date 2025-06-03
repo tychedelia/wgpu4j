@@ -1,0 +1,167 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+}
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+// Panama/Foreign Function Interface configuration
+tasks.withType(JavaCompile) {
+    options.compilerArgs += ['--enable-preview']
+}
+
+tasks.withType(Test) {
+    jvmArgs += ['--enable-preview']
+}
+
+tasks.withType(JavaExec) {
+    jvmArgs += ['--enable-preview']
+}
+
+// Custom source sets for generated and handwritten code
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src/main/java', 'src/generated/java']
+        }
+    }
+}
+
+// Task to download wgpu-native
+task downloadWgpuNative {
+    doLast {
+        def wgpuVersion = '25.0.2.1'
+        def osArch = getOsArch()
+        def buildType = 'release' // Use release builds
+        def fileName = "wgpu-${osArch}-${buildType}.zip"
+        def downloadUrl = "https://github.com/gfx-rs/wgpu-native/releases/download/v${wgpuVersion}/${fileName}"
+        
+        def nativeDir = file('native')
+        nativeDir.mkdirs()
+        
+        def zipFile = file("native/${fileName}")
+        
+        if (!zipFile.exists()) {
+            println "Downloading wgpu-native from ${downloadUrl}"
+            new URL(downloadUrl).withInputStream { i ->
+                zipFile.withOutputStream { it << i }
+            }
+            
+            // Extract the zip
+            copy {
+                from zipTree(zipFile)
+                into nativeDir
+            }
+        }
+    }
+}
+
+// Task to run jextract for generating bindings
+task generateBindings(dependsOn: downloadWgpuNative) {
+    doLast {
+        def jextractPath = findJextract()
+        if (jextractPath == null) {
+            println """
+jextract not found! 
+
+To generate Java bindings automatically, please install jextract:
+
+1. Download jextract from: https://jdk.java.net/jextract/
+2. Extract it to a directory (e.g., /usr/local/jextract)
+3. Set JEXTRACT_HOME environment variable:
+   export JEXTRACT_HOME=/usr/local/jextract
+4. Or add jextract to your PATH
+
+For now, you can continue development using the manual bindings approach.
+"""
+            return
+        }
+        
+        def headerFile = file('native/include/webgpu/webgpu.h')
+        def outputDir = file('src/generated/java')
+        outputDir.mkdirs()
+        
+        if (headerFile.exists()) {
+            println "Generating Java bindings from ${headerFile}"
+            exec {
+                commandLine jextractPath, 
+                    '--output', outputDir,
+                    '--target-package', 'org.wgpu4j.native',
+                    '--include-dir', file('native/include').absolutePath,
+                    headerFile.absolutePath
+            }
+        } else {
+            throw new GradleException("Header file not found: ${headerFile}")
+        }
+    }
+}
+
+def getOsArch() {
+    def os = System.getProperty('os.name').toLowerCase()
+    def arch = System.getProperty('os.arch').toLowerCase()
+    
+    if (os.contains('mac')) {
+        return arch.contains('aarch64') || arch.contains('arm') ? 'macos-aarch64' : 'macos-x86_64'
+    } else if (os.contains('linux')) {
+        return arch.contains('aarch64') || arch.contains('arm') ? 'linux-aarch64' : 'linux-x86_64'
+    } else if (os.contains('windows')) {
+        return arch.contains('aarch64') || arch.contains('arm') ? 'windows-aarch64-msvc' : 'windows-x86_64-msvc'
+    }
+    throw new GradleException("Unsupported OS/Architecture: ${os}/${arch}")
+}
+
+def findJextract() {
+    // Check if JEXTRACT_HOME is set
+    def jextractHome = System.getenv('JEXTRACT_HOME')
+    if (jextractHome) {
+        def jextractPath = "${jextractHome}/bin/jextract"
+        if (file(jextractPath).exists()) {
+            return jextractPath
+        }
+    }
+    
+    // Try to find jextract in PATH
+    try {
+        def result = exec {
+            commandLine 'which', 'jextract'
+            standardOutput = new ByteArrayOutputStream()
+            ignoreExitValue = true
+        }
+        if (result.exitValue == 0) {
+            return new String(result.standardOutput.toByteArray()).trim()
+        }
+    } catch (Exception e) {
+        // Ignore
+    }
+    
+    return null
+}
+
+// Task to copy native libraries to resources for packaging
+task copyNativeLibraries(dependsOn: downloadWgpuNative, type: Copy) {
+    from 'native/lib'
+    into 'src/main/resources/native'
+    include '*.dylib', '*.so', '*.dll'
+}
+
+processResources.dependsOn copyNativeLibraries
+
+// Uncomment the line below once jextract is installed:
+// compileJava.dependsOn generateBindings
