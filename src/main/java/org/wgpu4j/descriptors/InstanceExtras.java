@@ -37,39 +37,39 @@ public class InstanceExtras {
     public MemorySegment toCStruct(Arena arena) {
         MemorySegment struct = WGPUInstanceExtras.allocate(arena);
 
-        // Set chain header for wgpu-native extensions
+
         MemorySegment chain = WGPUInstanceExtras.chain(struct);
         WGPUChainedStruct.next(chain, MemorySegment.NULL);
         WGPUChainedStruct.sType(chain, wgpu_h.WGPUSType_InstanceExtras());
 
-        // Calculate backend flags
+
         int backendFlags = 0;
         for (InstanceBackend backend : backends) {
             backendFlags |= backend.getValue();
         }
         WGPUInstanceExtras.backends(struct, backendFlags);
 
-        // Calculate instance flags
+
         int instanceFlags = 0;
         for (InstanceFlag flag : flags) {
             instanceFlags |= flag.getValue();
         }
         WGPUInstanceExtras.flags(struct, instanceFlags);
 
-        // Set default values for other fields
-        WGPUInstanceExtras.dx12ShaderCompiler(struct, wgpu_h.WGPUDx12Compiler_Dxc()); // Use modern DXC compiler
+
+        WGPUInstanceExtras.dx12ShaderCompiler(struct, wgpu_h.WGPUDx12Compiler_Dxc());
         WGPUInstanceExtras.gles3MinorVersion(struct, wgpu_h.WGPUGles3MinorVersion_Automatic());
         WGPUInstanceExtras.glFenceBehaviour(struct, wgpu_h.WGPUGLFenceBehaviour_Normal());
-        
-        // Set paths to NULL (use defaults)
+
+
         MemorySegment dxilPath = WGPUInstanceExtras.dxilPath(struct);
         WGPUStringView.data(dxilPath, MemorySegment.NULL);
         WGPUStringView.length(dxilPath, 0);
-        
+
         MemorySegment dxcPath = WGPUInstanceExtras.dxcPath(struct);
         WGPUStringView.data(dxcPath, MemorySegment.NULL);
         WGPUStringView.length(dxcPath, 0);
-        
+
         WGPUInstanceExtras.dxcMaxShaderModel(struct, wgpu_h.WGPUDxcMaxShaderModel_V6_7());
 
         return struct;

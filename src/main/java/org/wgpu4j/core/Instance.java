@@ -37,17 +37,17 @@ public class Instance extends WgpuResource {
      * @throws WgpuException if instance creation fails
      */
     public static Instance create() {
-        // Create instance with proper configuration (like Bevy does)
+
         InstanceExtras extras = InstanceExtras.builder()
-                .backend(InstanceBackend.VULKAN) // Prefer Vulkan as requested
-                .enableDebug() // Enable debug and validation
+                .backend(InstanceBackend.VULKAN)
+                .enableDebug()
                 .build();
-                
+
         InstanceDescriptor descriptor = InstanceDescriptor.builder()
                 .label("wgpu4j Instance")
                 .extras(extras)
                 .build();
-                
+
         return create(descriptor);
     }
 
@@ -61,11 +61,11 @@ public class Instance extends WgpuResource {
     public static Instance create(InstanceDescriptor descriptor) {
         try (Arena arena = Arena.ofConfined()) {
             logger.info("Creating WGPU instance with proper descriptor (following Bevy pattern)...");
-            
-            // Create proper instance descriptor instead of NULL
+
+
             MemorySegment instanceDesc = descriptor.toCStruct(arena);
             logger.info("Instance descriptor created: {}", instanceDesc);
-            
+
             MemorySegment handle = webgpu_h.wgpuCreateInstance(instanceDesc);
 
             if (handle.equals(MemorySegment.NULL)) {
@@ -115,24 +115,24 @@ public class Instance extends WgpuResource {
                     if (status == 1) {
                         if (!adapter.equals(MemorySegment.NULL)) {
                             logger.info("Adapter request succeeded");
-                            // Copy the adapter handle to our own arena to ensure it stays valid
-                            // The adapter MemorySegment from callback might only be valid during callback execution
+
+
                             MemorySegment persistentHandle = MemorySegment.ofAddress(adapter.address());
                             future.complete(new Adapter(persistentHandle, callbackArena, this));
                         } else {
                             logger.error("Adapter request succeeded but returned null handle");
-                            callbackArena.close(); // Clean up on failure
+                            callbackArena.close();
                             future.completeExceptionally(new WgpuException("Adapter is null despite success status"));
                         }
                     } else {
                         String errorMessage = extractStringView(message);
                         logger.error("Adapter request failed: {}", errorMessage);
-                        callbackArena.close(); // Clean up on failure
+                        callbackArena.close();
                         future.completeExceptionally(new WgpuException("Adapter request failed: " + errorMessage));
                     }
                 } catch (Exception e) {
                     logger.error("Error in adapter request callback", e);
-                    callbackArena.close(); // Clean up on exception
+                    callbackArena.close();
                     future.completeExceptionally(new WgpuException("Callback error", e));
                 }
             };

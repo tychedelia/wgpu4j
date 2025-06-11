@@ -15,7 +15,7 @@ public abstract class WgpuResource implements AutoCloseable {
 
     protected final MemorySegment handle;
     private volatile boolean closed = false;
-    protected java.lang.foreign.Arena resourceArena = null; // Optional arena for cleanup
+    protected java.lang.foreign.Arena resourceArena = null;
 
     protected WgpuResource(MemorySegment handle) {
         if (handle == null || handle.equals(MemorySegment.NULL)) {
@@ -85,8 +85,8 @@ public abstract class WgpuResource implements AutoCloseable {
                 logger.warn("Failed to release WGPU resource {}: {}",
                         getClass().getSimpleName(), e.getMessage(), e);
             }
-            
-            // Close the associated arena if any
+
+
             if (resourceArena != null) {
                 try {
                     resourceArena.close();

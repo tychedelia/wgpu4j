@@ -16,27 +16,27 @@ public class AdapterInspectionTest {
     @Test
     public void inspectAdapter() throws Exception {
         System.out.println("=== Inspecting Windows Adapter Properties ===");
-        
+
         try (Instance instance = Instance.create()) {
             System.out.println("✓ Instance created");
 
-            // Test different adapter request options
+
             System.out.println("\n--- Testing High Performance Adapter ---");
             var adapterFuture = instance.requestAdapter(
-                AdapterRequestOptions.builder()
-                    .powerPreference(PowerPreference.HIGH_PERFORMANCE)
-                    .build()
+                    AdapterRequestOptions.builder()
+                            .powerPreference(PowerPreference.HIGH_PERFORMANCE)
+                            .build()
             );
-            
+
             try (Adapter adapter = adapterFuture.get(5, TimeUnit.SECONDS)) {
                 System.out.println("✓ High performance adapter acquired");
-                
-                // Try to get adapter info (if available)
+
+
                 System.out.println("Adapter handle: " + adapter.getHandle());
-                
+
                 System.out.println("\n→ Attempting device request with HIGH_PERFORMANCE adapter...");
                 var deviceFuture = adapter.requestDevice();
-                
+
                 try {
                     deviceFuture.get(5, TimeUnit.SECONDS).close();
                     System.out.println("✓ Device created successfully!");
@@ -47,18 +47,18 @@ public class AdapterInspectionTest {
 
             System.out.println("\n--- Testing Low Power Adapter ---");
             var lowPowerFuture = instance.requestAdapter(
-                AdapterRequestOptions.builder()
-                    .powerPreference(PowerPreference.LOW_POWER)
-                    .build()
+                    AdapterRequestOptions.builder()
+                            .powerPreference(PowerPreference.LOW_POWER)
+                            .build()
             );
-            
+
             try (Adapter adapter = lowPowerFuture.get(5, TimeUnit.SECONDS)) {
                 System.out.println("✓ Low power adapter acquired");
                 System.out.println("Adapter handle: " + adapter.getHandle());
-                
+
                 System.out.println("\n→ Attempting device request with LOW_POWER adapter...");
                 var deviceFuture = adapter.requestDevice();
-                
+
                 try {
                     deviceFuture.get(5, TimeUnit.SECONDS).close();
                     System.out.println("✓ Device created successfully!");

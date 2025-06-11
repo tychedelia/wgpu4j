@@ -93,8 +93,8 @@ public class TriangleExample {
 
     private void initWebGPU() throws Exception {
         logger.info("Initializing WebGPU...");
-        
-        // Enable WGPU native logging for detailed diagnostics
+
+
         WgpuLogging.setLogLevel(WgpuLogging.WGPU_LOG_LEVEL_INFO);
         WgpuLogging.setLogCallback((level, message) -> {
             String levelStr = switch (level) {
@@ -107,7 +107,7 @@ public class TriangleExample {
             };
             logger.info("[WGPU-{}] {}", levelStr, message);
         });
-        
+
         instance = Instance.create();
         logger.info("WebGPU instance created");
 
@@ -146,7 +146,7 @@ public class TriangleExample {
             if (os.contains("win")) {
                 long hwnd = glfwGetWin32Window(window);
                 WindowsSurfaceHelper.validateHandle(hwnd, "HWND");
-                
+
                 surfaceSource = WindowsSurfaceHelper.createWindowsSurfaceSource(arena, hwnd);
 
             } else if (os.contains("mac")) {
@@ -163,7 +163,7 @@ public class TriangleExample {
                 logger.info("Created macOS surface source with CAMetalLayer: 0x{}", Long.toHexString(metalLayer));
 
             } else {
-                // Assume Linux/X11
+
                 long x11Window = glfwGetX11Window(window);
                 long x11Display = glfwGetX11Display();
 

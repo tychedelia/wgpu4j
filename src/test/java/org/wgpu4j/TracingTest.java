@@ -14,11 +14,11 @@ public class TracingTest {
 
     @Test
     public void testWithTracing() throws Exception {
-        // Enable tracing if possible
+
         System.setProperty("jdk.foreign.traceDowncalls", "true");
-        
+
         System.out.println("=== Testing with tracing enabled ===");
-        
+
         try (Instance instance = Instance.create()) {
             System.out.println("✓ Instance created");
 
@@ -37,7 +37,7 @@ public class TracingTest {
 
                 System.out.println("\n→ About to call requestDevice with tracing...");
                 var deviceFuture = adapter.requestDevice();
-                
+
                 try {
                     deviceFuture.get(5, TimeUnit.SECONDS).close();
                     System.out.println("✓ Device created successfully!");

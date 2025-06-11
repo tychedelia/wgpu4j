@@ -15,7 +15,7 @@ public class MinimalDeviceTest {
     @Test
     public void testDeviceRequestWithoutGLFW() throws Exception {
         System.out.println("=== Testing device request WITHOUT any GLFW/windowing ===");
-        
+
         try (Instance instance = Instance.create()) {
             System.out.println("✓ Instance created");
 
@@ -25,14 +25,14 @@ public class MinimalDeviceTest {
 
                 System.out.println("→ Requesting device (no GLFW context)...");
                 var deviceFuture = adapter.requestDevice();
-                
-                // Process events while waiting
+
+
                 long startTime = System.currentTimeMillis();
                 while (!deviceFuture.isDone() && (System.currentTimeMillis() - startTime) < 10000) {
                     instance.processEvents();
                     Thread.sleep(10);
                 }
-                
+
                 try (Device device = deviceFuture.get(1, TimeUnit.SECONDS)) {
                     System.out.println("✓ Device acquired WITHOUT windowing!");
                 } catch (Exception e) {

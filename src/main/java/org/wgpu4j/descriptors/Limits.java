@@ -159,38 +159,130 @@ public class Limits {
         return struct;
     }
 
-    // Getters
-    public int getMaxTextureDimension1D() { return maxTextureDimension1D; }
-    public int getMaxTextureDimension2D() { return maxTextureDimension2D; }
-    public int getMaxTextureDimension3D() { return maxTextureDimension3D; }
-    public int getMaxTextureArrayLayers() { return maxTextureArrayLayers; }
-    public int getMaxBindGroups() { return maxBindGroups; }
-    public int getMaxBindGroupsPlusVertexBuffers() { return maxBindGroupsPlusVertexBuffers; }
-    public int getMaxBindingsPerBindGroup() { return maxBindingsPerBindGroup; }
-    public int getMaxDynamicUniformBuffersPerPipelineLayout() { return maxDynamicUniformBuffersPerPipelineLayout; }
-    public int getMaxDynamicStorageBuffersPerPipelineLayout() { return maxDynamicStorageBuffersPerPipelineLayout; }
-    public int getMaxSampledTexturesPerShaderStage() { return maxSampledTexturesPerShaderStage; }
-    public int getMaxSamplersPerShaderStage() { return maxSamplersPerShaderStage; }
-    public int getMaxStorageBuffersPerShaderStage() { return maxStorageBuffersPerShaderStage; }
-    public int getMaxStorageTexturesPerShaderStage() { return maxStorageTexturesPerShaderStage; }
-    public int getMaxUniformBuffersPerShaderStage() { return maxUniformBuffersPerShaderStage; }
-    public long getMaxUniformBufferBindingSize() { return maxUniformBufferBindingSize; }
-    public long getMaxStorageBufferBindingSize() { return maxStorageBufferBindingSize; }
-    public int getMinUniformBufferOffsetAlignment() { return minUniformBufferOffsetAlignment; }
-    public int getMinStorageBufferOffsetAlignment() { return minStorageBufferOffsetAlignment; }
-    public int getMaxVertexBuffers() { return maxVertexBuffers; }
-    public long getMaxBufferSize() { return maxBufferSize; }
-    public int getMaxVertexAttributes() { return maxVertexAttributes; }
-    public int getMaxVertexBufferArrayStride() { return maxVertexBufferArrayStride; }
-    public int getMaxInterStageShaderVariables() { return maxInterStageShaderVariables; }
-    public int getMaxColorAttachments() { return maxColorAttachments; }
-    public int getMaxColorAttachmentBytesPerSample() { return maxColorAttachmentBytesPerSample; }
-    public int getMaxComputeWorkgroupStorageSize() { return maxComputeWorkgroupStorageSize; }
-    public int getMaxComputeInvocationsPerWorkgroup() { return maxComputeInvocationsPerWorkgroup; }
-    public int getMaxComputeWorkgroupSizeX() { return maxComputeWorkgroupSizeX; }
-    public int getMaxComputeWorkgroupSizeY() { return maxComputeWorkgroupSizeY; }
-    public int getMaxComputeWorkgroupSizeZ() { return maxComputeWorkgroupSizeZ; }
-    public int getMaxComputeWorkgroupsPerDimension() { return maxComputeWorkgroupsPerDimension; }
+
+    public int getMaxTextureDimension1D() {
+        return maxTextureDimension1D;
+    }
+
+    public int getMaxTextureDimension2D() {
+        return maxTextureDimension2D;
+    }
+
+    public int getMaxTextureDimension3D() {
+        return maxTextureDimension3D;
+    }
+
+    public int getMaxTextureArrayLayers() {
+        return maxTextureArrayLayers;
+    }
+
+    public int getMaxBindGroups() {
+        return maxBindGroups;
+    }
+
+    public int getMaxBindGroupsPlusVertexBuffers() {
+        return maxBindGroupsPlusVertexBuffers;
+    }
+
+    public int getMaxBindingsPerBindGroup() {
+        return maxBindingsPerBindGroup;
+    }
+
+    public int getMaxDynamicUniformBuffersPerPipelineLayout() {
+        return maxDynamicUniformBuffersPerPipelineLayout;
+    }
+
+    public int getMaxDynamicStorageBuffersPerPipelineLayout() {
+        return maxDynamicStorageBuffersPerPipelineLayout;
+    }
+
+    public int getMaxSampledTexturesPerShaderStage() {
+        return maxSampledTexturesPerShaderStage;
+    }
+
+    public int getMaxSamplersPerShaderStage() {
+        return maxSamplersPerShaderStage;
+    }
+
+    public int getMaxStorageBuffersPerShaderStage() {
+        return maxStorageBuffersPerShaderStage;
+    }
+
+    public int getMaxStorageTexturesPerShaderStage() {
+        return maxStorageTexturesPerShaderStage;
+    }
+
+    public int getMaxUniformBuffersPerShaderStage() {
+        return maxUniformBuffersPerShaderStage;
+    }
+
+    public long getMaxUniformBufferBindingSize() {
+        return maxUniformBufferBindingSize;
+    }
+
+    public long getMaxStorageBufferBindingSize() {
+        return maxStorageBufferBindingSize;
+    }
+
+    public int getMinUniformBufferOffsetAlignment() {
+        return minUniformBufferOffsetAlignment;
+    }
+
+    public int getMinStorageBufferOffsetAlignment() {
+        return minStorageBufferOffsetAlignment;
+    }
+
+    public int getMaxVertexBuffers() {
+        return maxVertexBuffers;
+    }
+
+    public long getMaxBufferSize() {
+        return maxBufferSize;
+    }
+
+    public int getMaxVertexAttributes() {
+        return maxVertexAttributes;
+    }
+
+    public int getMaxVertexBufferArrayStride() {
+        return maxVertexBufferArrayStride;
+    }
+
+    public int getMaxInterStageShaderVariables() {
+        return maxInterStageShaderVariables;
+    }
+
+    public int getMaxColorAttachments() {
+        return maxColorAttachments;
+    }
+
+    public int getMaxColorAttachmentBytesPerSample() {
+        return maxColorAttachmentBytesPerSample;
+    }
+
+    public int getMaxComputeWorkgroupStorageSize() {
+        return maxComputeWorkgroupStorageSize;
+    }
+
+    public int getMaxComputeInvocationsPerWorkgroup() {
+        return maxComputeInvocationsPerWorkgroup;
+    }
+
+    public int getMaxComputeWorkgroupSizeX() {
+        return maxComputeWorkgroupSizeX;
+    }
+
+    public int getMaxComputeWorkgroupSizeY() {
+        return maxComputeWorkgroupSizeY;
+    }
+
+    public int getMaxComputeWorkgroupSizeZ() {
+        return maxComputeWorkgroupSizeZ;
+    }
+
+    public int getMaxComputeWorkgroupsPerDimension() {
+        return maxComputeWorkgroupsPerDimension;
+    }
 
     public static Builder builder() {
         return new Builder();
@@ -229,38 +321,161 @@ public class Limits {
         private int maxComputeWorkgroupSizeZ = 64;
         private int maxComputeWorkgroupsPerDimension = 65535;
 
-        // Builder methods (all return Builder for chaining)
-        public Builder maxTextureDimension1D(int value) { this.maxTextureDimension1D = value; return this; }
-        public Builder maxTextureDimension2D(int value) { this.maxTextureDimension2D = value; return this; }
-        public Builder maxTextureDimension3D(int value) { this.maxTextureDimension3D = value; return this; }
-        public Builder maxTextureArrayLayers(int value) { this.maxTextureArrayLayers = value; return this; }
-        public Builder maxBindGroups(int value) { this.maxBindGroups = value; return this; }
-        public Builder maxBindGroupsPlusVertexBuffers(int value) { this.maxBindGroupsPlusVertexBuffers = value; return this; }
-        public Builder maxBindingsPerBindGroup(int value) { this.maxBindingsPerBindGroup = value; return this; }
-        public Builder maxDynamicUniformBuffersPerPipelineLayout(int value) { this.maxDynamicUniformBuffersPerPipelineLayout = value; return this; }
-        public Builder maxDynamicStorageBuffersPerPipelineLayout(int value) { this.maxDynamicStorageBuffersPerPipelineLayout = value; return this; }
-        public Builder maxSampledTexturesPerShaderStage(int value) { this.maxSampledTexturesPerShaderStage = value; return this; }
-        public Builder maxSamplersPerShaderStage(int value) { this.maxSamplersPerShaderStage = value; return this; }
-        public Builder maxStorageBuffersPerShaderStage(int value) { this.maxStorageBuffersPerShaderStage = value; return this; }
-        public Builder maxStorageTexturesPerShaderStage(int value) { this.maxStorageTexturesPerShaderStage = value; return this; }
-        public Builder maxUniformBuffersPerShaderStage(int value) { this.maxUniformBuffersPerShaderStage = value; return this; }
-        public Builder maxUniformBufferBindingSize(long value) { this.maxUniformBufferBindingSize = value; return this; }
-        public Builder maxStorageBufferBindingSize(long value) { this.maxStorageBufferBindingSize = value; return this; }
-        public Builder minUniformBufferOffsetAlignment(int value) { this.minUniformBufferOffsetAlignment = value; return this; }
-        public Builder minStorageBufferOffsetAlignment(int value) { this.minStorageBufferOffsetAlignment = value; return this; }
-        public Builder maxVertexBuffers(int value) { this.maxVertexBuffers = value; return this; }
-        public Builder maxBufferSize(long value) { this.maxBufferSize = value; return this; }
-        public Builder maxVertexAttributes(int value) { this.maxVertexAttributes = value; return this; }
-        public Builder maxVertexBufferArrayStride(int value) { this.maxVertexBufferArrayStride = value; return this; }
-        public Builder maxInterStageShaderVariables(int value) { this.maxInterStageShaderVariables = value; return this; }
-        public Builder maxColorAttachments(int value) { this.maxColorAttachments = value; return this; }
-        public Builder maxColorAttachmentBytesPerSample(int value) { this.maxColorAttachmentBytesPerSample = value; return this; }
-        public Builder maxComputeWorkgroupStorageSize(int value) { this.maxComputeWorkgroupStorageSize = value; return this; }
-        public Builder maxComputeInvocationsPerWorkgroup(int value) { this.maxComputeInvocationsPerWorkgroup = value; return this; }
-        public Builder maxComputeWorkgroupSizeX(int value) { this.maxComputeWorkgroupSizeX = value; return this; }
-        public Builder maxComputeWorkgroupSizeY(int value) { this.maxComputeWorkgroupSizeY = value; return this; }
-        public Builder maxComputeWorkgroupSizeZ(int value) { this.maxComputeWorkgroupSizeZ = value; return this; }
-        public Builder maxComputeWorkgroupsPerDimension(int value) { this.maxComputeWorkgroupsPerDimension = value; return this; }
+
+        public Builder maxTextureDimension1D(int value) {
+            this.maxTextureDimension1D = value;
+            return this;
+        }
+
+        public Builder maxTextureDimension2D(int value) {
+            this.maxTextureDimension2D = value;
+            return this;
+        }
+
+        public Builder maxTextureDimension3D(int value) {
+            this.maxTextureDimension3D = value;
+            return this;
+        }
+
+        public Builder maxTextureArrayLayers(int value) {
+            this.maxTextureArrayLayers = value;
+            return this;
+        }
+
+        public Builder maxBindGroups(int value) {
+            this.maxBindGroups = value;
+            return this;
+        }
+
+        public Builder maxBindGroupsPlusVertexBuffers(int value) {
+            this.maxBindGroupsPlusVertexBuffers = value;
+            return this;
+        }
+
+        public Builder maxBindingsPerBindGroup(int value) {
+            this.maxBindingsPerBindGroup = value;
+            return this;
+        }
+
+        public Builder maxDynamicUniformBuffersPerPipelineLayout(int value) {
+            this.maxDynamicUniformBuffersPerPipelineLayout = value;
+            return this;
+        }
+
+        public Builder maxDynamicStorageBuffersPerPipelineLayout(int value) {
+            this.maxDynamicStorageBuffersPerPipelineLayout = value;
+            return this;
+        }
+
+        public Builder maxSampledTexturesPerShaderStage(int value) {
+            this.maxSampledTexturesPerShaderStage = value;
+            return this;
+        }
+
+        public Builder maxSamplersPerShaderStage(int value) {
+            this.maxSamplersPerShaderStage = value;
+            return this;
+        }
+
+        public Builder maxStorageBuffersPerShaderStage(int value) {
+            this.maxStorageBuffersPerShaderStage = value;
+            return this;
+        }
+
+        public Builder maxStorageTexturesPerShaderStage(int value) {
+            this.maxStorageTexturesPerShaderStage = value;
+            return this;
+        }
+
+        public Builder maxUniformBuffersPerShaderStage(int value) {
+            this.maxUniformBuffersPerShaderStage = value;
+            return this;
+        }
+
+        public Builder maxUniformBufferBindingSize(long value) {
+            this.maxUniformBufferBindingSize = value;
+            return this;
+        }
+
+        public Builder maxStorageBufferBindingSize(long value) {
+            this.maxStorageBufferBindingSize = value;
+            return this;
+        }
+
+        public Builder minUniformBufferOffsetAlignment(int value) {
+            this.minUniformBufferOffsetAlignment = value;
+            return this;
+        }
+
+        public Builder minStorageBufferOffsetAlignment(int value) {
+            this.minStorageBufferOffsetAlignment = value;
+            return this;
+        }
+
+        public Builder maxVertexBuffers(int value) {
+            this.maxVertexBuffers = value;
+            return this;
+        }
+
+        public Builder maxBufferSize(long value) {
+            this.maxBufferSize = value;
+            return this;
+        }
+
+        public Builder maxVertexAttributes(int value) {
+            this.maxVertexAttributes = value;
+            return this;
+        }
+
+        public Builder maxVertexBufferArrayStride(int value) {
+            this.maxVertexBufferArrayStride = value;
+            return this;
+        }
+
+        public Builder maxInterStageShaderVariables(int value) {
+            this.maxInterStageShaderVariables = value;
+            return this;
+        }
+
+        public Builder maxColorAttachments(int value) {
+            this.maxColorAttachments = value;
+            return this;
+        }
+
+        public Builder maxColorAttachmentBytesPerSample(int value) {
+            this.maxColorAttachmentBytesPerSample = value;
+            return this;
+        }
+
+        public Builder maxComputeWorkgroupStorageSize(int value) {
+            this.maxComputeWorkgroupStorageSize = value;
+            return this;
+        }
+
+        public Builder maxComputeInvocationsPerWorkgroup(int value) {
+            this.maxComputeInvocationsPerWorkgroup = value;
+            return this;
+        }
+
+        public Builder maxComputeWorkgroupSizeX(int value) {
+            this.maxComputeWorkgroupSizeX = value;
+            return this;
+        }
+
+        public Builder maxComputeWorkgroupSizeY(int value) {
+            this.maxComputeWorkgroupSizeY = value;
+            return this;
+        }
+
+        public Builder maxComputeWorkgroupSizeZ(int value) {
+            this.maxComputeWorkgroupSizeZ = value;
+            return this;
+        }
+
+        public Builder maxComputeWorkgroupsPerDimension(int value) {
+            this.maxComputeWorkgroupsPerDimension = value;
+            return this;
+        }
 
         public Limits build() {
             return new Limits(this);

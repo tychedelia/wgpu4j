@@ -33,7 +33,7 @@ public class InstanceDescriptor {
     public MemorySegment toCStruct(Arena arena) {
         MemorySegment struct = WGPUInstanceDescriptor.allocate(arena);
 
-        // Set next in chain to extras if provided
+
         if (extras != null) {
             MemorySegment extrasStruct = extras.toCStruct(arena);
             WGPUInstanceDescriptor.nextInChain(struct, extrasStruct);

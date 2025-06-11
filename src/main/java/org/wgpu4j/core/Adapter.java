@@ -16,7 +16,6 @@ import java.util.concurrent.CompletableFuture;
 public class Adapter extends WgpuResource {
 
     private final Instance instance;
-    // Global arena for adapter operations - kept alive for the application lifetime
     private static final Arena GLOBAL_ARENA = Arena.ofShared();
 
     static {
@@ -25,12 +24,12 @@ public class Adapter extends WgpuResource {
 
     protected Adapter(MemorySegment handle) {
         super(handle);
-        this.instance = null; // For backward compatibility
+        this.instance = null;
     }
 
     protected Adapter(MemorySegment handle, java.lang.foreign.Arena arena) {
         super(handle, arena);
-        this.instance = null; // For backward compatibility
+        this.instance = null;
     }
 
     protected Adapter(MemorySegment handle, java.lang.foreign.Arena arena, Instance instance) {
@@ -46,35 +45,33 @@ public class Adapter extends WgpuResource {
     public org.wgpu4j.descriptors.Limits getLimits() {
         checkNotClosed();
 
-        // Allocate limits structure using global arena for memory safety
         MemorySegment limitsStruct = WGPULimits.allocate(GLOBAL_ARENA);
         WGPULimits.nextInChain(limitsStruct, MemorySegment.NULL);
-        
+
         int status = webgpu_h.wgpuAdapterGetLimits(handle, limitsStruct);
-        
-        if (status != 1) { // WGPUStatus_Success = 1
+
+        if (status != 1) {
             throw new WgpuException("Failed to get adapter limits, status: " + status);
         }
-        
+
         return org.wgpu4j.descriptors.Limits.fromNative(limitsStruct);
     }
 
     /**
      * Requests a device from this adapter asynchronously using a DeviceDescriptor.
      * This is the core method that handles the mechanics of device creation.
-     * 
+     * <p>
      * Example usage:
      * <pre>{@code
-     * // Create custom device descriptor
-     * DeviceDescriptor deviceDesc = DeviceDescriptor.builder()
+     *      * DeviceDescriptor deviceDesc = DeviceDescriptor.builder()
      *     .label("My Custom Device")
      *     .requiredFeatures(Set.of(FeatureName.DEPTH_CLIP_CONTROL))
      *     .build();
-     * 
-     * // Or use utility methods
+     *
+     *
      * DeviceDescriptor deviceDesc = adapter.createDeviceDescriptorWithAdapterLimits("My Device");
-     * 
-     * // Request device with specific descriptor
+     *
+     *
      * CompletableFuture<Device> deviceFuture = adapter.requestDevice(deviceDesc);
      * }</pre>
      *
@@ -92,20 +89,20 @@ public class Adapter extends WgpuResource {
                 try {
                     if (status == 1) {
                         if (!device.equals(MemorySegment.NULL)) {
-                            // Copy the device handle to ensure it stays valid beyond callback execution
+
                             MemorySegment persistentDeviceHandle = MemorySegment.ofAddress(device.address());
                             future.complete(new Device(persistentDeviceHandle, callbackArena));
                         } else {
-                            callbackArena.close(); // Clean up on failure
+                            callbackArena.close();
                             future.completeExceptionally(new WgpuException("Device is null despite success status"));
                         }
                     } else {
                         String errorMessage = extractStringView(message);
-                        callbackArena.close(); // Clean up on failure
+                        callbackArena.close();
                         future.completeExceptionally(new WgpuException("Device request failed: " + errorMessage));
                     }
                 } catch (Exception e) {
-                    callbackArena.close(); // Clean up on exception
+                    callbackArena.close();
                     future.completeExceptionally(new WgpuException("Callback error", e));
                 }
             };
@@ -113,14 +110,14 @@ public class Adapter extends WgpuResource {
             MemorySegment callbackStub = WGPURequestDeviceCallback.allocate(callback, callbackArena);
             MemorySegment deviceDescriptorStruct = deviceDescriptor.toCStruct(callbackArena);
 
-            // Use AllowSpontaneous mode for immediate callback execution
+
             MemorySegment callbackInfo = WGPURequestDeviceCallbackInfo.allocate(callbackArena);
             WGPURequestDeviceCallbackInfo.callback(callbackInfo, callbackStub);
             WGPURequestDeviceCallbackInfo.mode(callbackInfo, webgpu_h.WGPUCallbackMode_AllowSpontaneous());
 
             MemorySegment wgpuFuture = webgpu_h.wgpuAdapterRequestDevice(callbackArena, handle, deviceDescriptorStruct, callbackInfo);
 
-            // Check for immediate failure
+
             if (wgpuFuture.equals(MemorySegment.NULL)) {
                 throw new WgpuException("wgpuAdapterRequestDevice returned NULL future");
             }
@@ -141,7 +138,7 @@ public class Adapter extends WgpuResource {
      * @return A future that will complete with a Device
      */
     public CompletableFuture<Device> requestDevice(DeviceRequestOptions options) {
-        // Create device descriptor using adapter's capabilities (following Bevy pattern)
+
         DeviceDescriptor deviceDesc = createDeviceDescriptorWithAdapterLimits(
                 options != null ? options.getLabel() : "Device"
         );

@@ -14,8 +14,8 @@ public class LoggingDebugTest {
     @Test
     public void testWithNativeLogging() throws Exception {
         System.out.println("=== Enabling Native WGPU Logging ===");
-        
-        // Set up native logging
+
+
         WgpuLogging.setLogLevel(WgpuLogging.WGPU_LOG_LEVEL_INFO);
         WgpuLogging.setLogCallback((level, message) -> {
             String levelStr = switch (level) {
@@ -28,9 +28,9 @@ public class LoggingDebugTest {
             };
             System.out.println("[WGPU-" + levelStr + "] " + message);
         });
-        
+
         System.out.println("\n=== Starting WebGPU Operations ===");
-        
+
         try (Instance instance = Instance.create()) {
             System.out.println("✓ Instance created");
 
@@ -40,9 +40,9 @@ public class LoggingDebugTest {
 
                 System.out.println("\n→ About to call requestDevice with native logging enabled...");
                 System.out.flush();
-                
+
                 var deviceFuture = adapter.requestDevice();
-                
+
                 try {
                     deviceFuture.get(5, TimeUnit.SECONDS).close();
                     System.out.println("✓ SUCCESS: Device created!");
