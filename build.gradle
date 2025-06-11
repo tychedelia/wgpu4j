@@ -1,7 +1,12 @@
 plugins {
     id 'java-library'
     id 'maven-publish'
+    id 'signing'
 }
+
+group = 'org.wgpu4j'
+version = '0.1.0-SNAPSHOT'
+description = 'Java bindings for wgpu-native using Project Panama'
 
 repositories {
     mavenCentral()
@@ -9,33 +14,36 @@ repositories {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(24)
     }
+    withSourcesJar()
+    withJavadocJar()
 }
 
 dependencies {
+    api 'org.slf4j:slf4j-api:2.0.9'
+    
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testRuntimeOnly 'org.slf4j:slf4j-simple:2.0.9'
 }
 
-tasks.named('test') {
-    useJUnitPlatform()
-}
-
-// Panama/Foreign Function Interface configuration
 tasks.withType(JavaCompile) {
-    options.compilerArgs += ['--enable-preview']
+    options.encoding = 'UTF-8'
 }
 
 tasks.withType(Test) {
-    jvmArgs += ['--enable-preview']
+    jvmArgs += ['--enable-native-access=ALL-UNNAMED']
+    useJUnitPlatform()
 }
 
-tasks.withType(JavaExec) {
-    jvmArgs += ['--enable-preview']
+tasks.withType(Javadoc) {
+    if (JavaVersion.current().isJava9Compatible()) {
+        options.addStringOption("-source", "24")
+        options.addBooleanOption("html5", true)
+    }
 }
 
-// Custom source sets for generated and handwritten code
 sourceSets {
     main {
         java {
@@ -44,68 +52,115 @@ sourceSets {
     }
 }
 
-// Task to download wgpu-native
-task downloadWgpuNative {
+def wgpuVersion = '25.0.2.1'
+def buildType = 'release'
+
+def supportedPlatforms = [
+    'macos-aarch64',
+    'macos-x86_64', 
+    'linux-aarch64',
+    'linux-x86_64',
+    'windows-aarch64-msvc',
+    'windows-x86_64-msvc'
+]
+
+tasks.register('downloadAllWgpuNatives') {
+    description = 'Downloads wgpu-native for all supported platforms'
+
+    inputs.property('wgpuVersion', wgpuVersion)
+    inputs.property('supportedPlatforms', supportedPlatforms)
+    outputs.dir('native')
+
     doLast {
-        def wgpuVersion = '25.0.2.1'
-        def osArch = getOsArch()
-        def buildType = 'release' // Use release builds
-        def fileName = "wgpu-${osArch}-${buildType}.zip"
-        def downloadUrl = "https://github.com/gfx-rs/wgpu-native/releases/download/v${wgpuVersion}/${fileName}"
-        
         def nativeDir = file('native')
         nativeDir.mkdirs()
-        
-        def zipFile = file("native/${fileName}")
-        
-        if (!zipFile.exists()) {
-            println "Downloading wgpu-native from ${downloadUrl}"
-            new URL(downloadUrl).withInputStream { i ->
-                zipFile.withOutputStream { it << i }
+
+        // Always download at least one platform for header files (preferring current platform)
+        def currentPlatform = getCurrentPlatform()
+        def platformsToDownload = supportedPlatforms.contains(currentPlatform) ?
+                [currentPlatform] + (supportedPlatforms - currentPlatform) :
+                supportedPlatforms
+
+        // Download and extract all platforms
+        platformsToDownload.each { platform ->
+            def fileName = "wgpu-${platform}-${buildType}.zip"
+            def downloadUrl = "https://github.com/gfx-rs/wgpu-native/releases/download/v${wgpuVersion}/${fileName}"
+            def zipFile = file("native/${fileName}")
+            def platformDir = file("native/${platform}")
+
+            if (!zipFile.exists()) {
+                println "Downloading wgpu-native for ${platform} from ${downloadUrl}"
+                try {
+                    new URL(downloadUrl).withInputStream { i ->
+                        zipFile.withOutputStream { it << i }
+                    }
+                } catch (Exception e) {
+                    println "Warning: Failed to download ${platform}: ${e.message}"
+                    return // Skip this platform
+                }
             }
-            
-            // Extract the zip
-            copy {
-                from zipTree(zipFile)
-                into nativeDir
+
+            if (zipFile.exists() && !platformDir.exists()) {
+                println "Extracting wgpu-native for ${platform}"
+                copy {
+                    from zipTree(zipFile)
+                    into platformDir
+                }
+            }
+        }
+
+        // Copy headers from first available platform
+        if (!file('native/include').exists()) {
+            boolean headersCopied = false
+            for (platform in platformsToDownload) {
+                def platformDir = file("native/${platform}")
+                def includeDir = file("${platformDir}/include")
+                if (includeDir.exists()) {
+                    println "Copying headers from ${platform}"
+                    copy {
+                        from includeDir
+                        into 'native/include'
+                    }
+                    headersCopied = true
+                    break
+                }
+            }
+
+            if (!headersCopied) {
+                throw new GradleException("Failed to find header files from any platform")
             }
         }
     }
 }
 
-// Task to run jextract for generating bindings
-task generateBindings(dependsOn: downloadWgpuNative) {
+tasks.register('generateBindings') {
+    dependsOn downloadAllWgpuNatives
+    description = 'Generates Java bindings using jextract'
+
+    inputs.file('native/include/webgpu/webgpu.h')
+    outputs.dir('src/generated/java')
+
     doLast {
         def jextractPath = findJextract()
         if (jextractPath == null) {
-            println """
-jextract not found! 
-
-To generate Java bindings automatically, please install jextract:
-
-1. Download jextract from: https://jdk.java.net/jextract/
-2. Extract it to a directory (e.g., /usr/local/jextract)
-3. Set JEXTRACT_HOME environment variable:
-   export JEXTRACT_HOME=/usr/local/jextract
-4. Or add jextract to your PATH
-
-For now, you can continue development using the manual bindings approach.
-"""
-            return
+            jextractPath = "${rootDir}/tools/jextract-22/bin/jextract"
+            if (!file(jextractPath).exists()) {
+                throw new GradleException("jextract not found at ${jextractPath}. Please run the setup again.")
+            }
         }
-        
+
         def headerFile = file('native/include/webgpu/webgpu.h')
         def outputDir = file('src/generated/java')
         outputDir.mkdirs()
-        
+
         if (headerFile.exists()) {
             println "Generating Java bindings from ${headerFile}"
             exec {
-                commandLine jextractPath, 
-                    '--output', outputDir,
-                    '--target-package', 'org.wgpu4j.native',
-                    '--include-dir', file('native/include').absolutePath,
-                    headerFile.absolutePath
+                commandLine jextractPath,
+                        '--output', outputDir,
+                        '--target-package', 'org.wgpu4j.bindings',
+                        '--include-dir', file('native/include').absolutePath,
+                        headerFile.absolutePath
             }
         } else {
             throw new GradleException("Header file not found: ${headerFile}")
@@ -113,7 +168,38 @@ For now, you can continue development using the manual bindings approach.
     }
 }
 
-def getOsArch() {
+tasks.register('copyAllNativeLibraries') {
+    dependsOn downloadAllWgpuNatives
+    description = 'Copies all platform native libraries to JAR resources'
+
+    inputs.dir('native')
+    outputs.dir('src/main/resources/native')
+
+    doLast {
+        def resourcesNativeDir = file('src/main/resources/native')
+        resourcesNativeDir.mkdirs()
+
+        supportedPlatforms.each { platform ->
+            def platformDir = file("native/${platform}")
+            def libDir = file("${platformDir}/lib")
+            def targetDir = file("${resourcesNativeDir}/${platform}")
+
+            if (libDir.exists()) {
+                targetDir.mkdirs()
+                copy {
+                    from libDir
+                    into targetDir
+                    include '*.dylib', '*.so', '*.dll'
+                }
+                println "Copied ${platform} libraries to ${targetDir}"
+            } else {
+                println "Warning: No libraries found for ${platform} at ${libDir}"
+            }
+        }
+    }
+}
+
+static def getCurrentPlatform() {
     def os = System.getProperty('os.name').toLowerCase()
     def arch = System.getProperty('os.arch').toLowerCase()
     
@@ -128,7 +214,6 @@ def getOsArch() {
 }
 
 def findJextract() {
-    // Check if JEXTRACT_HOME is set
     def jextractHome = System.getenv('JEXTRACT_HOME')
     if (jextractHome) {
         def jextractPath = "${jextractHome}/bin/jextract"
@@ -137,7 +222,6 @@ def findJextract() {
         }
     }
     
-    // Try to find jextract in PATH
     try {
         def result = exec {
             commandLine 'which', 'jextract'
@@ -154,14 +238,86 @@ def findJextract() {
     return null
 }
 
-// Task to copy native libraries to resources for packaging
-task copyNativeLibraries(dependsOn: downloadWgpuNative, type: Copy) {
-    from 'native/lib'
-    into 'src/main/resources/native'
-    include '*.dylib', '*.so', '*.dll'
+jar {
+    manifest {
+        attributes(
+            'Implementation-Title': project.name,
+            'Implementation-Version': project.version,
+            'Implementation-Vendor': 'WGPU4J',
+            'Built-By': System.getProperty('user.name'),
+            'Built-Date': new Date().toString(),
+            'Built-JDK': System.getProperty('java.version'),
+            'Multi-Release': 'true'
+        )
+    }
 }
 
-processResources.dependsOn copyNativeLibraries
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+            
+            pom {
+                name = project.name
+                description = project.description
+                url = 'https://github.com/tychedelia/wgpu4j'
+                
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                
+                developers {
+                    developer {
+                        id = 'tychedelia'
+                        name = 'tychedelia'
+                        email = 'tychedelia@users.noreply.github.com'
+                    }
+                }
+                
+                scm {
+                    connection = 'scm:git:git://github.com/tychedelia/wgpu4j.git'
+                    developerConnection = 'scm:git:ssh://github.com:tychedelia/wgpu4j.git'
+                    url = 'https://github.com/tychedelia/wgpu4j/tree/main'
+                }
+            }
+        }
+    }
+    
+    repositories {
+        maven {
+            name = 'sonatype'
+            def releasesRepoUrl = 'https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/'
+            def snapshotsRepoUrl = 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
+            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+            
+            credentials {
+                username = project.findProperty('ossrhUsername') ?: System.getenv('OSSRH_USERNAME')
+                password = project.findProperty('ossrhPassword') ?: System.getenv('OSSRH_PASSWORD')
+            }
+        }
+    }
+}
 
-// Uncomment the line below once jextract is installed:
-// compileJava.dependsOn generateBindings
+signing {
+    required { gradle.taskGraph.hasTask('publish') }
+    sign publishing.publications.maven
+}
+
+processResources.dependsOn copyAllNativeLibraries
+compileJava.dependsOn generateBindings
+sourcesJar.dependsOn generateBindings, copyAllNativeLibraries
+publishToMavenLocal.dependsOn jar
+
+
+tasks.register('downloadWgpuNative') {
+    dependsOn 'downloadAllWgpuNatives'
+    description = 'Downloads WGPU native libraries'
+}
+
+tasks.register('copyNativeLibraries') {
+    dependsOn 'copyAllNativeLibraries'
+    description = 'Copies native libraries to resources'
+}

@@ -39,12 +39,15 @@ replay_pid*
 ehthumbs.db
 Thumbs.db
 
-# Generated sources
+# Generated sources (jextract bindings)
 src/generated/
 
 # Native libraries and downloads
 native/
 src/main/resources/native/
+
+# Development tools (jextract, etc.)
+tools/
 
 # Temporary files
 *.tmp

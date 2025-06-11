@@ -1,0 +1,59 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+description = 'WGPU4J Examples and Demos'
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(24)
+    }
+}
+
+dependencies {
+    // Core WGPU4J dependency
+    implementation project(':')
+    
+    // LWJGL for windowing in examples only
+    def lwjglVersion = "3.3.4"
+    implementation platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
+    implementation "org.lwjgl:lwjgl"
+    implementation "org.lwjgl:lwjgl-glfw"
+    runtimeOnly "org.lwjgl:lwjgl::natives-windows"
+    runtimeOnly "org.lwjgl:lwjgl-glfw::natives-windows"
+    runtimeOnly "org.lwjgl:lwjgl::natives-macos"
+    runtimeOnly "org.lwjgl:lwjgl-glfw::natives-macos"
+    runtimeOnly "org.lwjgl:lwjgl::natives-macos-arm64"
+    runtimeOnly "org.lwjgl:lwjgl-glfw::natives-macos-arm64"
+    runtimeOnly "org.lwjgl:lwjgl::natives-linux"
+    runtimeOnly "org.lwjgl:lwjgl-glfw::natives-linux"
+    runtimeOnly "org.lwjgl:lwjgl::natives-linux-arm64"
+    runtimeOnly "org.lwjgl:lwjgl-glfw::natives-linux-arm64"
+    
+    // Logging for examples
+    implementation 'org.slf4j:slf4j-simple:2.0.9'
+}
+
+// Panama/Foreign Function Interface configuration
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+tasks.withType(Test) {
+    jvmArgs += ['--enable-native-access=ALL-UNNAMED']
+    useJUnitPlatform()
+}
+
+// Main class for running triangle demo
+application {
+    mainClass = 'org.wgpu4j.examples.TriangleExample'
+    applicationDefaultJvmArgs = [
+        '--enable-native-access=ALL-UNNAMED',
+        '-XstartOnFirstThread'  // Required for GLFW on macOS
+    ]
+}
