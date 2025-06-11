@@ -150,7 +150,6 @@ public class TriangleExample {
                 surfaceSource = WindowsSurfaceHelper.createWindowsSurfaceSource(arena, hwnd);
 
             } else if (os.contains("mac")) {
-
                 long nsWindow = glfwGetCocoaWindow(window);
                 long metalLayer = MacOSSurfaceHelper.createCAMetalLayer(nsWindow);
 
@@ -163,7 +162,6 @@ public class TriangleExample {
                 logger.info("Created macOS surface source with CAMetalLayer: 0x{}", Long.toHexString(metalLayer));
 
             } else {
-
                 long x11Window = glfwGetX11Window(window);
                 long x11Display = glfwGetX11Display();
 
@@ -195,23 +193,19 @@ public class TriangleExample {
     }
 
     private void configureSurface() throws Exception {
-        try (Arena arena = Arena.ofConfined()) {
-            MemorySegment config = WGPUSurfaceConfiguration.allocate(arena);
-            WGPUSurfaceConfiguration.device(config, device.getHandle());
-            WGPUSurfaceConfiguration.format(config, TextureFormat.BGRA8_UNORM.getValue());
-            WGPUSurfaceConfiguration.usage(config, TextureUsage.RENDER_ATTACHMENT);
-            WGPUSurfaceConfiguration.width(config, WINDOW_WIDTH);
-            WGPUSurfaceConfiguration.height(config, WINDOW_HEIGHT);
-            WGPUSurfaceConfiguration.presentMode(config, PresentMode.FIFO.getValue());
-            WGPUSurfaceConfiguration.alphaMode(config, CompositeAlphaMode.OPAQUE.getValue());
-            WGPUSurfaceConfiguration.viewFormatCount(config, 0);
-            WGPUSurfaceConfiguration.viewFormats(config, MemorySegment.NULL);
+        SurfaceConfiguration config = SurfaceConfiguration.builder()
+                .device(device)
+                .format(TextureFormat.BGRA8_UNORM)
+                .usage(TextureUsage.RENDER_ATTACHMENT)
+                .size(WINDOW_WIDTH, WINDOW_HEIGHT)
+                .presentMode(PresentMode.FIFO)
+                .alphaMode(CompositeAlphaMode.OPAQUE)
+                .build();
 
-            webgpu_h.wgpuSurfaceConfigure(surface.getHandle(), config);
+        surface.configure(config);
 
-            logger.info("Surface configured: {}x{}, format: BGRA8_UNORM",
-                    WINDOW_WIDTH, WINDOW_HEIGHT);
-        }
+        logger.info("Surface configured: {}x{}, format: BGRA8_UNORM",
+                WINDOW_WIDTH, WINDOW_HEIGHT);
     }
 
     private void createRenderResources() throws Exception {
@@ -293,61 +287,38 @@ public class TriangleExample {
     }
 
     private void renderFrame() throws Exception {
-        try (Arena arena = Arena.ofConfined()) {
+        Surface.SurfaceTexture surfaceTexture = surface.getCurrentTexture();
+        if (!surfaceTexture.isSuccess()) {
+            logger.warn("Failed to get current surface texture, status: {}", surfaceTexture.getStatus());
+            return;
+        }
 
-            MemorySegment surfaceTexture = WGPUSurfaceTexture.allocate(arena);
-            webgpu_h.wgpuSurfaceGetCurrentTexture(surface.getHandle(), surfaceTexture);
+        try (TextureView textureView = surfaceTexture.getTexture().createView();
+             CommandEncoder encoder = device.createCommandEncoder()) {
 
-            MemorySegment textureHandle = WGPUSurfaceTexture.texture(surfaceTexture);
-            if (textureHandle.equals(MemorySegment.NULL)) {
-                logger.warn("Failed to get current surface texture");
-                return;
+            RenderPassColorAttachment colorAttachment = RenderPassColorAttachment.builder()
+                    .view(textureView)
+                    .loadOp(LoadOp.CLEAR)
+                    .storeOp(StoreOp.STORE)
+                    .clearColor(0.1, 0.1, 0.1, 1.0)
+                    .build();
+
+            RenderPassDescriptor renderPassDesc = RenderPassDescriptor.builder()
+                    .label("Triangle Render Pass")
+                    .colorAttachment(colorAttachment)
+                    .build();
+
+            try (RenderPassEncoder renderPass = encoder.beginRenderPass(renderPassDesc)) {
+                renderPass.setPipeline(renderPipeline);
+                renderPass.draw(3, 1);
+                renderPass.end();
             }
 
-            MemorySegment textureView = webgpu_h.wgpuTextureCreateView(
-                    textureHandle, MemorySegment.NULL);
-
-            CommandEncoder encoder = device.createCommandEncoder();
-
-            MemorySegment renderPassDesc = WGPURenderPassDescriptor.allocate(arena);
-            MemorySegment colorAttachment = WGPURenderPassColorAttachment.allocate(arena);
-
-            WGPURenderPassColorAttachment.view(colorAttachment, textureView);
-            WGPURenderPassColorAttachment.loadOp(colorAttachment, LoadOp.CLEAR.getValue());
-            WGPURenderPassColorAttachment.storeOp(colorAttachment, StoreOp.STORE.getValue());
-
-            MemorySegment clearColor = WGPUColor.allocate(arena);
-            WGPUColor.r(clearColor, 0.1);
-            WGPUColor.g(clearColor, 0.1);
-            WGPUColor.b(clearColor, 0.1);
-            WGPUColor.a(clearColor, 1.0);
-            WGPURenderPassColorAttachment.clearValue(colorAttachment, clearColor);
-
-            MemorySegment colorAttachments = arena.allocate(WGPURenderPassColorAttachment.sizeof());
-            MemorySegment.copy(colorAttachment, 0, colorAttachments, 0, WGPURenderPassColorAttachment.sizeof());
-
-            WGPURenderPassDescriptor.colorAttachmentCount(renderPassDesc, 1);
-            WGPURenderPassDescriptor.colorAttachments(renderPassDesc, colorAttachments);
-            WGPURenderPassDescriptor.depthStencilAttachment(renderPassDesc, MemorySegment.NULL);
-
-            MemorySegment renderPass = webgpu_h.wgpuCommandEncoderBeginRenderPass(
-                    encoder.getHandle(), renderPassDesc);
-
-            webgpu_h.wgpuRenderPassEncoderSetPipeline(renderPass, renderPipeline.getHandle());
-            webgpu_h.wgpuRenderPassEncoderDraw(renderPass, 3, 1, 0, 0);
-            webgpu_h.wgpuRenderPassEncoderEnd(renderPass);
-
             CommandBuffer commandBuffer = encoder.finish();
-
             queue.submit(commandBuffer);
-
-            webgpu_h.wgpuSurfacePresent(surface.getHandle());
-
-            webgpu_h.wgpuTextureViewRelease(textureView);
-            webgpu_h.wgpuRenderPassEncoderRelease(renderPass);
+            surface.present();
 
             commandBuffer.close();
-            encoder.close();
         }
     }
 
