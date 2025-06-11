@@ -1,4 +1,4 @@
-package org.wgpu4j.examples;
+package org.wgpu4j.utils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,18 +23,28 @@ public class WindowsSurfaceHelper {
      * @return MemorySegment representing the WGPUSurfaceSourceWindowsHWND struct
      */
     public static MemorySegment createWindowsSurfaceSource(Arena arena, long hwnd) {
+        long hinstance = getCurrentProcessInstance();
+        return createWindowsSurfaceSource(arena, hwnd, hinstance);
+    }
+
+    /**
+     * Creates a Windows surface source from explicit HWND and HINSTANCE handles.
+     *
+     * @param arena The arena to allocate the surface source in
+     * @param hwnd  The window handle
+     * @param hinstance The instance handle
+     * @return MemorySegment representing the WGPUSurfaceSourceWindowsHWND struct
+     */
+    public static MemorySegment createWindowsSurfaceSource(Arena arena, long hwnd, long hinstance) {
+        validateHandle(hwnd, "HWND");
+        
         logger.info("Creating Windows surface source for HWND: 0x{}", Long.toHexString(hwnd));
-
-
-        long hinstance = 0x400000;
 
         MemorySegment surfaceSource = WGPUSurfaceSourceWindowsHWND.allocate(arena);
         MemorySegment chain = WGPUSurfaceSourceWindowsHWND.chain(surfaceSource);
 
-
         WGPUChainedStruct.next(chain, MemorySegment.NULL);
         WGPUChainedStruct.sType(chain, webgpu_h.WGPUSType_SurfaceSourceWindowsHWND());
-
 
         WGPUSurfaceSourceWindowsHWND.hwnd(surfaceSource, MemorySegment.ofAddress(hwnd));
         WGPUSurfaceSourceWindowsHWND.hinstance(surfaceSource, MemorySegment.ofAddress(hinstance));

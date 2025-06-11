@@ -8,16 +8,14 @@ import org.wgpu4j.WgpuException;
 import org.wgpu4j.WgpuLogging;
 import org.wgpu4j.core.*;
 import org.wgpu4j.descriptors.*;
+import org.wgpu4j.enums.TextureViewDimension;
 import org.wgpu4j.enums.*;
-import org.wgpu4j.bindings.*;
+import org.wgpu4j.utils.SurfaceUtils;
 
 import java.lang.foreign.*;
 import java.util.concurrent.CompletableFuture;
 
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.glfw.GLFWNativeCocoa.*;
-import static org.lwjgl.glfw.GLFWNativeWin32.*;
-import static org.lwjgl.glfw.GLFWNativeX11.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
 /**
@@ -95,7 +93,7 @@ public class TriangleExample {
         logger.info("Initializing WebGPU...");
 
 
-        WgpuLogging.setLogLevel(WgpuLogging.WGPU_LOG_LEVEL_INFO);
+        WgpuLogging.setLogLevel(WgpuLogging.WGPU_LOG_LEVEL_WARN);
         WgpuLogging.setLogCallback((level, message) -> {
             String levelStr = switch (level) {
                 case WgpuLogging.WGPU_LOG_LEVEL_ERROR -> "ERROR";
@@ -137,58 +135,9 @@ public class TriangleExample {
 
     private void createSurface() throws Exception {
         logger.info("Creating platform-specific surface...");
-        String os = System.getProperty("os.name").toLowerCase();
-
-        try (Arena arena = Arena.ofConfined()) {
-            MemorySegment surfaceDesc = WGPUSurfaceDescriptor.allocate(arena);
-            MemorySegment surfaceSource;
-
-            if (os.contains("win")) {
-                long hwnd = glfwGetWin32Window(window);
-                WindowsSurfaceHelper.validateHandle(hwnd, "HWND");
-
-                surfaceSource = WindowsSurfaceHelper.createWindowsSurfaceSource(arena, hwnd);
-
-            } else if (os.contains("mac")) {
-                long nsWindow = glfwGetCocoaWindow(window);
-                long metalLayer = MacOSSurfaceHelper.createCAMetalLayer(nsWindow);
-
-                surfaceSource = WGPUSurfaceSourceMetalLayer.allocate(arena);
-                MemorySegment chain = WGPUSurfaceSourceMetalLayer.chain(surfaceSource);
-                WGPUChainedStruct.next(chain, MemorySegment.NULL);
-                WGPUChainedStruct.sType(chain, webgpu_h.WGPUSType_SurfaceSourceMetalLayer());
-                WGPUSurfaceSourceMetalLayer.layer(surfaceSource, MemorySegment.ofAddress(metalLayer));
-
-                logger.info("Created macOS surface source with CAMetalLayer: 0x{}", Long.toHexString(metalLayer));
-
-            } else {
-                long x11Window = glfwGetX11Window(window);
-                long x11Display = glfwGetX11Display();
-
-                surfaceSource = LinuxSurfaceHelper.createX11SurfaceSource(arena, x11Window, x11Display);
-            }
-
-            WGPUSurfaceDescriptor.nextInChain(surfaceDesc, surfaceSource);
-            MemorySegment labelData = arena.allocateFrom("Triangle Surface");
-            MemorySegment labelView = WGPUSurfaceDescriptor.label(surfaceDesc);
-            WGPUStringView.data(labelView, labelData);
-            WGPUStringView.length(labelView, "Triangle Surface".length());
-
-            MemorySegment surfaceHandle = webgpu_h.wgpuInstanceCreateSurface(
-                    instance.getHandle(), surfaceDesc);
-
-            if (surfaceHandle.equals(MemorySegment.NULL)) {
-                throw new WgpuException("Failed to create surface");
-            }
-
-            var constructor = Surface.class.getDeclaredConstructor(MemorySegment.class);
-            constructor.setAccessible(true);
-            surface = constructor.newInstance(surfaceHandle);
-
-            logger.info("Surface created successfully");
-        }
-
-
+        
+        surface = SurfaceUtils.createFromGLFWWindow(instance, window);
+        
         configureSurface();
     }
 
@@ -251,9 +200,16 @@ public class TriangleExample {
                         .build()
         );
 
+        PipelineLayout pipelineLayout = device.createPipelineLayout(
+                PipelineLayoutDescriptor.builder()
+                        .label("Empty Pipeline Layout")
+                        .build()
+        );
+
         renderPipeline = device.createRenderPipeline(
                 RenderPipelineDescriptor.builder()
                         .label("Triangle Pipeline")
+                        .layout(pipelineLayout)
                         .vertexShader(shaderModule)
                         .vertexEntryPoint("vs_main")
                         .fragmentShader(shaderModule)
@@ -261,6 +217,7 @@ public class TriangleExample {
                         .primitiveState(PrimitiveState.builder()
                                 .topology(PrimitiveTopology.TRIANGLE_LIST)
                                 .build())
+                        .depthStencilState(null)
                         .multisampleState(MultisampleState.builder()
                                 .count(1)
                                 .build())
