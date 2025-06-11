@@ -214,19 +214,35 @@ public class TriangleExample {
         logger.info("Creating render resources...");
 
         String shaderSource = """
+                struct VertexOutput {
+                    @builtin(position) position: vec4<f32>,
+                    @location(0) color: vec3<f32>,
+                }
+                
                 @vertex
-                fn vs_main(@builtin(vertex_index) vertexIndex: u32) -> @builtin(position) vec4<f32> {
-                    var pos = array<vec2<f32>, 3>(
+                fn vs_main(@builtin(vertex_index) vertex_index: u32) -> VertexOutput {
+                    var positions = array<vec2<f32>, 3>(
                         vec2<f32>( 0.0,  0.5),
                         vec2<f32>(-0.5, -0.5),
                         vec2<f32>( 0.5, -0.5)
                     );
-                    return vec4<f32>(pos[vertexIndex], 0.0, 1.0);
+                
+                    var colors = array<vec3<f32>, 3>(
+                        vec3<f32>(1.0, 0.0, 0.0),
+                        vec3<f32>(0.0, 1.0, 0.0),
+                        vec3<f32>(0.0, 0.0, 1.0)
+                    );
+                
+                    var output: VertexOutput;
+                    output.position = vec4<f32>(positions[vertex_index], 0.0, 1.0);
+                    output.color = colors[vertex_index];
+                
+                    return output;
                 }
                 
                 @fragment
-                fn fs_main() -> @location(0) vec4<f32> {
-                    return vec4<f32>(1.0, 0.0, 0.0, 1.0); 
+                fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
+                    return vec4<f32>(input.color, 1.0);
                 }
                 """;
 
@@ -297,9 +313,9 @@ public class TriangleExample {
             WGPURenderPassColorAttachment.storeOp(colorAttachment, StoreOp.STORE.getValue());
 
             MemorySegment clearColor = WGPUColor.allocate(arena);
-            WGPUColor.r(clearColor, 0.3);
-            WGPUColor.g(clearColor, 0.3);
-            WGPUColor.b(clearColor, 0.8);
+            WGPUColor.r(clearColor, 0.1);
+            WGPUColor.g(clearColor, 0.1);
+            WGPUColor.b(clearColor, 0.1);
             WGPUColor.a(clearColor, 1.0);
             WGPURenderPassColorAttachment.clearValue(colorAttachment, clearColor);
 
