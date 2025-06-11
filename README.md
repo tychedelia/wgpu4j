@@ -10,7 +10,9 @@ Java bindings for [wgpu-native](https://github.com/gfx-rs/wgpu-native) using Pro
 
 ## Setup
 
-**Option 1: Automatic (Recommended)**
+**Option 1: Automatic**
+
+Gradle will install `jextract` automatically if it is not found in your system PATH or `JEXTRACT_HOME` environment variable.
 
 ```bash
 ./gradlew downloadJextract
@@ -42,13 +44,4 @@ cd wgpu4j-examples
 
 ## Usage
 
-```java
-try (Instance instance = Instance.create()) {
-    Adapter adapter = instance.requestAdapter().join();
-    Device device = adapter.requestDevice().join();
-    
-    // Create buffers, textures, render pipelines...
-}
-```
-
-Resources are automatically cleaned up when closed.
+See [the examples](./wgpu4j-examples) for usage patterns.
