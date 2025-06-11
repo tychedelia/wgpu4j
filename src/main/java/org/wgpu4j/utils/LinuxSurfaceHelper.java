@@ -15,8 +15,8 @@ public class LinuxSurfaceHelper {
     /**
      * Creates an X11 surface source for Linux platforms.
      *
-     * @param arena The memory arena to allocate in
-     * @param x11Window The X11 window handle
+     * @param arena      The memory arena to allocate in
+     * @param x11Window  The X11 window handle
      * @param x11Display The X11 display handle
      * @return MemorySegment representing the surface source
      */
@@ -31,7 +31,7 @@ public class LinuxSurfaceHelper {
         WGPUSurfaceSourceXlibWindow.display(surfaceSource, MemorySegment.ofAddress(x11Display));
         WGPUSurfaceSourceXlibWindow.window(surfaceSource, (int) x11Window);
 
-        logger.info("Created X11 surface source with window: 0x{}, display: 0x{}", 
+        logger.info("Created X11 surface source with window: 0x{}, display: 0x{}",
                 Long.toHexString(x11Window), Long.toHexString(x11Display));
 
         return surfaceSource;
@@ -40,7 +40,7 @@ public class LinuxSurfaceHelper {
     /**
      * Validates that a native handle is not null/zero.
      *
-     * @param handle The handle to validate
+     * @param handle     The handle to validate
      * @param handleType The type of handle for error messages
      * @throws IllegalArgumentException if the handle is invalid
      */

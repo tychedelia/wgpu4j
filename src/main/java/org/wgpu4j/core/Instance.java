@@ -39,7 +39,7 @@ public class Instance extends WgpuResource {
     public static Instance create() {
 
         InstanceExtras extras = InstanceExtras.builder()
-                .backend(InstanceBackend.VULKAN)
+                .backend(InstanceBackend.PRIMARY)
                 .enableDebug()
                 .build();
 
@@ -115,25 +115,23 @@ public class Instance extends WgpuResource {
                     if (status == 1) {
                         if (!adapter.equals(MemorySegment.NULL)) {
                             logger.info("Adapter request succeeded");
-
-
                             MemorySegment persistentHandle = MemorySegment.ofAddress(adapter.address());
                             future.complete(new Adapter(persistentHandle, callbackArena, this));
                         } else {
                             logger.error("Adapter request succeeded but returned null handle");
-                            callbackArena.close();
                             future.completeExceptionally(new WgpuException("Adapter is null despite success status"));
+                            callbackArena.close();
                         }
                     } else {
                         String errorMessage = extractStringView(message);
                         logger.error("Adapter request failed: {}", errorMessage);
-                        callbackArena.close();
                         future.completeExceptionally(new WgpuException("Adapter request failed: " + errorMessage));
+                        callbackArena.close();
                     }
                 } catch (Exception e) {
                     logger.error("Error in adapter request callback", e);
-                    callbackArena.close();
                     future.completeExceptionally(new WgpuException("Callback error", e));
+                    callbackArena.close();
                 }
             };
 
@@ -167,11 +165,13 @@ public class Instance extends WgpuResource {
             MemorySegment dataPtr = WGPUStringView.data(stringView);
             long length = WGPUStringView.length(stringView);
 
-            if (dataPtr.equals(MemorySegment.NULL) || length == 0) {
+            if (dataPtr.equals(MemorySegment.NULL) || length <= 0) {
                 return "Unknown error";
             }
 
-            return dataPtr.reinterpret(length).getString(0);
+            // Check if the data pointer can be safely read
+            MemorySegment validatedPtr = dataPtr.reinterpret(length);
+            return validatedPtr.getString(0, java.nio.charset.StandardCharsets.UTF_8);
 
         } catch (Exception e) {
             return "Error reading message: " + e.getMessage();

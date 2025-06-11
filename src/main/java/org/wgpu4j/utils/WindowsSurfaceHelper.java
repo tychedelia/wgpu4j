@@ -30,14 +30,14 @@ public class WindowsSurfaceHelper {
     /**
      * Creates a Windows surface source from explicit HWND and HINSTANCE handles.
      *
-     * @param arena The arena to allocate the surface source in
-     * @param hwnd  The window handle
+     * @param arena     The arena to allocate the surface source in
+     * @param hwnd      The window handle
      * @param hinstance The instance handle
      * @return MemorySegment representing the WGPUSurfaceSourceWindowsHWND struct
      */
     public static MemorySegment createWindowsSurfaceSource(Arena arena, long hwnd, long hinstance) {
         validateHandle(hwnd, "HWND");
-        
+
         logger.info("Creating Windows surface source for HWND: 0x{}", Long.toHexString(hwnd));
 
         MemorySegment surfaceSource = WGPUSurfaceSourceWindowsHWND.allocate(arena);

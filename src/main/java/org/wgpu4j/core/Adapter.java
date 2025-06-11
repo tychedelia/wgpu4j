@@ -89,21 +89,20 @@ public class Adapter extends WgpuResource {
                 try {
                     if (status == 1) {
                         if (!device.equals(MemorySegment.NULL)) {
-
                             MemorySegment persistentDeviceHandle = MemorySegment.ofAddress(device.address());
                             future.complete(new Device(persistentDeviceHandle, callbackArena));
                         } else {
-                            callbackArena.close();
                             future.completeExceptionally(new WgpuException("Device is null despite success status"));
+                            callbackArena.close();
                         }
                     } else {
                         String errorMessage = extractStringView(message);
-                        callbackArena.close();
                         future.completeExceptionally(new WgpuException("Device request failed: " + errorMessage));
+                        callbackArena.close();
                     }
                 } catch (Exception e) {
-                    callbackArena.close();
                     future.completeExceptionally(new WgpuException("Callback error", e));
+                    callbackArena.close();
                 }
             };
 
@@ -157,11 +156,13 @@ public class Adapter extends WgpuResource {
             MemorySegment dataPtr = WGPUStringView.data(stringView);
             long length = WGPUStringView.length(stringView);
 
-            if (dataPtr.equals(MemorySegment.NULL) || length == 0) {
+            if (dataPtr.equals(MemorySegment.NULL) || length <= 0) {
                 return "Unknown error";
             }
 
-            return dataPtr.reinterpret(length).getString(0);
+            // Check if the data pointer can be safely read
+            MemorySegment validatedPtr = dataPtr.reinterpret(length);
+            return validatedPtr.getString(0, java.nio.charset.StandardCharsets.UTF_8);
 
         } catch (Exception e) {
             return "Error reading message: " + e.getMessage();

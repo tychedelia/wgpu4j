@@ -30,7 +30,7 @@ public class SurfaceUtils {
      * Creates a surface from a GLFW window handle (convenience method).
      * Automatically detects the platform and uses appropriate native calls.
      *
-     * @param instance The WebGPU instance
+     * @param instance   The WebGPU instance
      * @param glfwWindow The GLFW window handle
      * @return A new Surface instance
      * @throws WgpuException if surface creation fails
@@ -41,18 +41,17 @@ public class SurfaceUtils {
         }
 
         String os = System.getProperty("os.name").toLowerCase();
-        
+
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment surfaceDesc = WGPUSurfaceDescriptor.allocate(arena);
             MemorySegment surfaceSource;
 
             if (os.contains("win")) {
-                // Use LWJGL's GLFW native bindings
                 try {
                     Class<?> glfwNativeWin32 = Class.forName("org.lwjgl.glfw.GLFWNativeWin32");
                     var getWin32Window = glfwNativeWin32.getMethod("glfwGetWin32Window", long.class);
                     long hwnd = (Long) getWin32Window.invoke(null, glfwWindow);
-                    
+
                     surfaceSource = WindowsSurfaceHelper.createWindowsSurfaceSource(arena, hwnd);
                 } catch (Exception e) {
                     throw new WgpuException("Failed to get Windows window handle from GLFW", e);
@@ -81,7 +80,7 @@ public class SurfaceUtils {
                     var getX11Display = glfwNativeX11.getMethod("glfwGetX11Display");
                     long x11Window = (Long) getX11Window.invoke(null, glfwWindow);
                     long x11Display = (Long) getX11Display.invoke(null);
-                    
+
                     surfaceSource = LinuxSurfaceHelper.createX11SurfaceSource(arena, x11Window, x11Display);
                 } catch (Exception e) {
                     throw new WgpuException("Failed to get X11 window handle from GLFW", e);
@@ -96,15 +95,15 @@ public class SurfaceUtils {
      * Creates a surface from native window handles (advanced method).
      * Allows users to provide their own window system integration.
      *
-     * @param instance The WebGPU instance
-     * @param platform The target platform
+     * @param instance     The WebGPU instance
+     * @param platform     The target platform
      * @param windowHandle The native window handle
-     * @param extraHandle Additional handle (HINSTANCE for Windows, X11 display for Linux, unused for macOS)
+     * @param extraHandle  Additional handle (HINSTANCE for Windows, X11 display for Linux, unused for macOS)
      * @return A new Surface instance
      * @throws WgpuException if surface creation fails
      */
-    public static Surface createFromNativeHandle(Instance instance, Platform platform, 
-                                               long windowHandle, long extraHandle) {
+    public static Surface createFromNativeHandle(Instance instance, Platform platform,
+                                                 long windowHandle, long extraHandle) {
         if (windowHandle == 0) {
             throw new IllegalArgumentException("Window handle cannot be null/zero");
         }
@@ -141,9 +140,9 @@ public class SurfaceUtils {
     /**
      * Internal method to create the surface from prepared descriptors.
      */
-    private static Surface createSurfaceInternal(Instance instance, Arena arena, 
-                                               MemorySegment surfaceDesc, MemorySegment surfaceSource, 
-                                               String label) {
+    private static Surface createSurfaceInternal(Instance instance, Arena arena,
+                                                 MemorySegment surfaceDesc, MemorySegment surfaceSource,
+                                                 String label) {
         try {
             WGPUSurfaceDescriptor.nextInChain(surfaceDesc, surfaceSource);
             MemorySegment labelData = arena.allocateFrom(label);
@@ -158,7 +157,6 @@ public class SurfaceUtils {
                 throw new WgpuException("Failed to create surface");
             }
 
-            // Use reflection to create Surface instance (since constructor is package-private)
             Constructor<Surface> constructor = Surface.class.getDeclaredConstructor(MemorySegment.class);
             constructor.setAccessible(true);
             Surface surface = constructor.newInstance(surfaceHandle);
