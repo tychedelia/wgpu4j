@@ -6,6 +6,8 @@ import org.wgpu4j.WgpuException;
 import org.wgpu4j.WgpuNative;
 import org.wgpu4j.descriptors.AdapterRequestOptions;
 import org.wgpu4j.descriptors.InstanceDescriptor;
+import org.wgpu4j.descriptors.InstanceExtras;
+import org.wgpu4j.enums.InstanceBackend;
 import org.wgpu4j.bindings.*;
 
 import java.lang.foreign.*;
@@ -28,14 +30,25 @@ public class Instance extends WgpuResource {
     }
 
     /**
-     * Creates a new WGPU instance with default settings.
+     * Creates a new WGPU instance with default settings optimized for debugging.
      * This is the starting point for all WGPU operations.
      *
      * @return A new WGPU instance
      * @throws WgpuException if instance creation fails
      */
     public static Instance create() {
-        return create(InstanceDescriptor.builder().build());
+        // Create instance with proper configuration (like Bevy does)
+        InstanceExtras extras = InstanceExtras.builder()
+                .backend(InstanceBackend.VULKAN) // Prefer Vulkan as requested
+                .enableDebug() // Enable debug and validation
+                .build();
+                
+        InstanceDescriptor descriptor = InstanceDescriptor.builder()
+                .label("wgpu4j Instance")
+                .extras(extras)
+                .build();
+                
+        return create(descriptor);
     }
 
     /**
@@ -46,15 +59,21 @@ public class Instance extends WgpuResource {
      * @throws WgpuException if instance creation fails
      */
     public static Instance create(InstanceDescriptor descriptor) {
-        try {
-            MemorySegment handle = webgpu_h.wgpuCreateInstance(MemorySegment.NULL);
+        try (Arena arena = Arena.ofConfined()) {
+            logger.info("Creating WGPU instance with proper descriptor (following Bevy pattern)...");
+            
+            // Create proper instance descriptor instead of NULL
+            MemorySegment instanceDesc = descriptor.toCStruct(arena);
+            logger.info("Instance descriptor created: {}", instanceDesc);
+            
+            MemorySegment handle = webgpu_h.wgpuCreateInstance(instanceDesc);
 
             if (handle.equals(MemorySegment.NULL)) {
                 logger.error("Failed to create WGPU instance - wgpuCreateInstance returned NULL");
                 throw new WgpuException("Failed to create WGPU instance");
             }
 
-            logger.info("Created WGPU instance");
+            logger.info("Created WGPU instance with handle: {}", handle);
             return new Instance(handle);
 
         } catch (Exception e) {
@@ -90,39 +109,42 @@ public class Instance extends WgpuResource {
 
         Arena callbackArena = Arena.ofShared();
 
-        try (Arena tempArena = Arena.ofConfined()) {
+        try {
             WGPURequestAdapterCallback.Function callback = (status, adapter, message, userdata1, userdata2) -> {
                 try {
                     if (status == 1) {
                         if (!adapter.equals(MemorySegment.NULL)) {
                             logger.info("Adapter request succeeded");
-                            future.complete(new Adapter(adapter));
+                            // Copy the adapter handle to our own arena to ensure it stays valid
+                            // The adapter MemorySegment from callback might only be valid during callback execution
+                            MemorySegment persistentHandle = MemorySegment.ofAddress(adapter.address());
+                            future.complete(new Adapter(persistentHandle, callbackArena, this));
                         } else {
                             logger.error("Adapter request succeeded but returned null handle");
+                            callbackArena.close(); // Clean up on failure
                             future.completeExceptionally(new WgpuException("Adapter is null despite success status"));
                         }
                     } else {
                         String errorMessage = extractStringView(message);
                         logger.error("Adapter request failed: {}", errorMessage);
+                        callbackArena.close(); // Clean up on failure
                         future.completeExceptionally(new WgpuException("Adapter request failed: " + errorMessage));
                     }
                 } catch (Exception e) {
                     logger.error("Error in adapter request callback", e);
+                    callbackArena.close(); // Clean up on exception
                     future.completeExceptionally(new WgpuException("Callback error", e));
-                } finally {
-                    callbackArena.close();
                 }
             };
 
             MemorySegment callbackStub = WGPURequestAdapterCallback.allocate(callback, callbackArena);
 
-            MemorySegment adapterOptions = options.toCStruct(tempArena);
+            MemorySegment adapterOptions = options.toCStruct(callbackArena);
 
-            MemorySegment callbackInfo = WGPURequestAdapterCallbackInfo.allocate(tempArena);
+            MemorySegment callbackInfo = WGPURequestAdapterCallbackInfo.allocate(callbackArena);
             WGPURequestAdapterCallbackInfo.callback(callbackInfo, callbackStub);
 
-            MemorySegment wgpuFuture = webgpu_h.wgpuInstanceRequestAdapter(tempArena, handle, adapterOptions, callbackInfo);
-
+            MemorySegment wgpuFuture = webgpu_h.wgpuInstanceRequestAdapter(callbackArena, handle, adapterOptions, callbackInfo);
 
         } catch (Exception e) {
             logger.error("Exception during adapter request setup", e);

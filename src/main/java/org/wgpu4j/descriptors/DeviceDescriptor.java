@@ -15,11 +15,13 @@ public class DeviceDescriptor {
     private final String label;
     private final List<FeatureName> requiredFeatures;
     private final QueueDescriptor defaultQueue;
+    private final Limits requiredLimits;
 
-    private DeviceDescriptor(String label, List<FeatureName> requiredFeatures, QueueDescriptor defaultQueue) {
+    private DeviceDescriptor(String label, List<FeatureName> requiredFeatures, QueueDescriptor defaultQueue, Limits requiredLimits) {
         this.label = label;
         this.requiredFeatures = new ArrayList<>(requiredFeatures);
         this.defaultQueue = defaultQueue;
+        this.requiredLimits = requiredLimits;
     }
 
     public String getLabel() {
@@ -32,6 +34,10 @@ public class DeviceDescriptor {
 
     public QueueDescriptor getDefaultQueue() {
         return defaultQueue;
+    }
+
+    public Limits getRequiredLimits() {
+        return requiredLimits;
     }
 
     /**
@@ -67,7 +73,12 @@ public class DeviceDescriptor {
             WGPUDeviceDescriptor.requiredFeatures(struct, MemorySegment.NULL);
         }
 
-        WGPUDeviceDescriptor.requiredLimits(struct, MemorySegment.NULL);
+        if (requiredLimits != null) {
+            MemorySegment limitsStruct = requiredLimits.toCStruct(arena);
+            WGPUDeviceDescriptor.requiredLimits(struct, limitsStruct);
+        } else {
+            WGPUDeviceDescriptor.requiredLimits(struct, MemorySegment.NULL);
+        }
 
         MemorySegment queueStruct = defaultQueue.toCStruct(arena);
         MemorySegment defaultQueueField = WGPUDeviceDescriptor.defaultQueue(struct);
@@ -90,6 +101,7 @@ public class DeviceDescriptor {
         private String label = "";
         private List<FeatureName> requiredFeatures = new ArrayList<>();
         private QueueDescriptor defaultQueue = QueueDescriptor.builder().build();
+        private Limits requiredLimits = null;
 
         public Builder label(String label) {
             this.label = label;
@@ -112,8 +124,13 @@ public class DeviceDescriptor {
             return this;
         }
 
+        public Builder requiredLimits(Limits limits) {
+            this.requiredLimits = limits;
+            return this;
+        }
+
         public DeviceDescriptor build() {
-            return new DeviceDescriptor(label, requiredFeatures, defaultQueue);
+            return new DeviceDescriptor(label, requiredFeatures, defaultQueue, requiredLimits);
         }
     }
 }

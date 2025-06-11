@@ -20,7 +20,7 @@ dependencies {
     implementation project(':')
     
     // LWJGL for windowing in examples only
-    def lwjglVersion = "3.3.4"
+    def lwjglVersion = "3.3.6"
     implementation platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
     implementation "org.lwjgl:lwjgl"
     implementation "org.lwjgl:lwjgl-glfw"
@@ -52,8 +52,12 @@ tasks.withType(Test) {
 // Main class for running triangle demo
 application {
     mainClass = 'org.wgpu4j.examples.TriangleExample'
-    applicationDefaultJvmArgs = [
-        '--enable-native-access=ALL-UNNAMED',
-        '-XstartOnFirstThread'  // Required for GLFW on macOS
-    ]
+    def jvmArgs = ['--enable-native-access=ALL-UNNAMED']
+    
+    // Only add -XstartOnFirstThread on macOS (required for GLFW)
+    if (System.getProperty('os.name').toLowerCase().contains('mac')) {
+        jvmArgs += '-XstartOnFirstThread'
+    }
+    
+    applicationDefaultJvmArgs = jvmArgs
 }

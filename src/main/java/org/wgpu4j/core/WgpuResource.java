@@ -15,12 +15,21 @@ public abstract class WgpuResource implements AutoCloseable {
 
     protected final MemorySegment handle;
     private volatile boolean closed = false;
+    protected java.lang.foreign.Arena resourceArena = null; // Optional arena for cleanup
 
     protected WgpuResource(MemorySegment handle) {
         if (handle == null || handle.equals(MemorySegment.NULL)) {
             throw new IllegalArgumentException("Invalid WGPU resource handle");
         }
         this.handle = handle;
+    }
+
+    protected WgpuResource(MemorySegment handle, java.lang.foreign.Arena arena) {
+        if (handle == null || handle.equals(MemorySegment.NULL)) {
+            throw new IllegalArgumentException("Invalid WGPU resource handle");
+        }
+        this.handle = handle;
+        this.resourceArena = arena;
 
         if (logger.isDebugEnabled()) {
             logger.debug("Created {} with handle 0x{}",
@@ -75,6 +84,16 @@ public abstract class WgpuResource implements AutoCloseable {
             } catch (Exception e) {
                 logger.warn("Failed to release WGPU resource {}: {}",
                         getClass().getSimpleName(), e.getMessage(), e);
+            }
+            
+            // Close the associated arena if any
+            if (resourceArena != null) {
+                try {
+                    resourceArena.close();
+                } catch (Exception e) {
+                    logger.warn("Failed to close resource arena for {}: {}",
+                            getClass().getSimpleName(), e.getMessage(), e);
+                }
             }
         }
     }

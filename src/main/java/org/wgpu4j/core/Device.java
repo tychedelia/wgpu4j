@@ -35,6 +35,10 @@ public class Device extends WgpuResource {
     protected Device(MemorySegment handle) {
         super(handle);
     }
+    
+    protected Device(MemorySegment handle, java.lang.foreign.Arena arena) {
+        super(handle, arena);
+    }
 
     /**
      * Gets the command queue for this device.

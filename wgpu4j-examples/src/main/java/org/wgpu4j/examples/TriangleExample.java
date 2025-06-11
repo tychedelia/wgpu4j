@@ -5,6 +5,7 @@ import org.lwjgl.system.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wgpu4j.WgpuException;
+import org.wgpu4j.WgpuLogging;
 import org.wgpu4j.core.*;
 import org.wgpu4j.descriptors.*;
 import org.wgpu4j.enums.*;
@@ -92,6 +93,21 @@ public class TriangleExample {
 
     private void initWebGPU() throws Exception {
         logger.info("Initializing WebGPU...");
+        
+        // Enable WGPU native logging for detailed diagnostics
+        WgpuLogging.setLogLevel(WgpuLogging.WGPU_LOG_LEVEL_INFO);
+        WgpuLogging.setLogCallback((level, message) -> {
+            String levelStr = switch (level) {
+                case WgpuLogging.WGPU_LOG_LEVEL_ERROR -> "ERROR";
+                case WgpuLogging.WGPU_LOG_LEVEL_WARN -> "WARN";
+                case WgpuLogging.WGPU_LOG_LEVEL_INFO -> "INFO";
+                case WgpuLogging.WGPU_LOG_LEVEL_DEBUG -> "DEBUG";
+                case WgpuLogging.WGPU_LOG_LEVEL_TRACE -> "TRACE";
+                default -> "UNKNOWN";
+            };
+            logger.info("[WGPU-{}] {}", levelStr, message);
+        });
+        
         instance = Instance.create();
         logger.info("WebGPU instance created");
 
@@ -105,6 +121,7 @@ public class TriangleExample {
         adapter = adapterFuture.get(5, java.util.concurrent.TimeUnit.SECONDS);
         logger.info("WebGPU adapter acquired");
 
+        logger.info("Requesting WebGPU device...");
         CompletableFuture<Device> deviceFuture = adapter.requestDevice(
                 DeviceRequestOptions.builder()
                         .label("Triangle Device")
@@ -128,14 +145,9 @@ public class TriangleExample {
 
             if (os.contains("win")) {
                 long hwnd = glfwGetWin32Window(window);
-
-                surfaceSource = WGPUSurfaceSourceWindowsHWND.allocate(arena);
-                MemorySegment chain = WGPUSurfaceSourceWindowsHWND.chain(surfaceSource);
-                WGPUChainedStruct.next(chain, MemorySegment.NULL);
-                WGPUChainedStruct.sType(chain, webgpu_h.WGPUSType_SurfaceSourceWindowsHWND());
-                WGPUSurfaceSourceWindowsHWND.hwnd(surfaceSource, MemorySegment.ofAddress(hwnd));
-
-                logger.info("Created Windows surface source with HWND: 0x{}", Long.toHexString(hwnd));
+                WindowsSurfaceHelper.validateHandle(hwnd, "HWND");
+                
+                surfaceSource = WindowsSurfaceHelper.createWindowsSurfaceSource(arena, hwnd);
 
             } else if (os.contains("mac")) {
 
@@ -151,19 +163,11 @@ public class TriangleExample {
                 logger.info("Created macOS surface source with CAMetalLayer: 0x{}", Long.toHexString(metalLayer));
 
             } else {
-
+                // Assume Linux/X11
                 long x11Window = glfwGetX11Window(window);
                 long x11Display = glfwGetX11Display();
 
-                surfaceSource = WGPUSurfaceSourceXlibWindow.allocate(arena);
-                MemorySegment chain = WGPUSurfaceSourceXlibWindow.chain(surfaceSource);
-                WGPUChainedStruct.next(chain, MemorySegment.NULL);
-                WGPUChainedStruct.sType(chain, webgpu_h.WGPUSType_SurfaceSourceXlibWindow());
-                WGPUSurfaceSourceXlibWindow.window(surfaceSource, x11Window);
-                WGPUSurfaceSourceXlibWindow.display(surfaceSource, MemorySegment.ofAddress(x11Display));
-
-                logger.info("Created X11 surface source with Window: 0x{}, Display: 0x{}",
-                        Long.toHexString(x11Window), Long.toHexString(x11Display));
+                surfaceSource = LinuxSurfaceHelper.createX11SurfaceSource(arena, x11Window, x11Display);
             }
 
             WGPUSurfaceDescriptor.nextInChain(surfaceDesc, surfaceSource);
