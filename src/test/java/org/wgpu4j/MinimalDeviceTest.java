@@ -1,9 +1,9 @@
 package org.wgpu4j;
 
 import org.junit.jupiter.api.Test;
-import org.wgpu4j.core.Instance;
-import org.wgpu4j.core.Adapter;
-import org.wgpu4j.core.Device;
+import org.wgpu4j.resource.Instance;
+import org.wgpu4j.resource.Adapter;
+import org.wgpu4j.resource.Device;
 
 import java.util.concurrent.TimeUnit;
 

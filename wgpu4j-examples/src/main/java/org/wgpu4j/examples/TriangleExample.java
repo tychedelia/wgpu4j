@@ -4,15 +4,12 @@ import org.lwjgl.glfw.*;
 import org.lwjgl.system.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wgpu4j.WgpuException;
 import org.wgpu4j.WgpuLogging;
-import org.wgpu4j.core.*;
-import org.wgpu4j.descriptors.*;
-import org.wgpu4j.enums.TextureViewDimension;
-import org.wgpu4j.enums.*;
+import org.wgpu4j.resource.*;
+import org.wgpu4j.descriptor.*;
+import org.wgpu4j.constant.*;
 import org.wgpu4j.utils.SurfaceUtils;
 
-import java.lang.foreign.*;
 import java.util.concurrent.CompletableFuture;
 
 import static org.lwjgl.glfw.GLFW.*;

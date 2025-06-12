@@ -14,7 +14,6 @@ import java.nio.file.StandardCopyOption;
  * Handles cross-platform loading of native libraries packaged in the JAR.
  */
 public class WgpuNative {
-
     private static final Logger logger = LoggerFactory.getLogger(WgpuNative.class);
     private static boolean loaded = false;
 

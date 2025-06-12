@@ -1,11 +1,11 @@
 package org.wgpu4j;
 
 import org.junit.jupiter.api.Test;
-import org.wgpu4j.core.Instance;
-import org.wgpu4j.descriptors.AdapterRequestOptions;
-import org.wgpu4j.descriptors.TextureDescriptor;
-import org.wgpu4j.enums.PowerPreference;
-import org.wgpu4j.enums.TextureFormat;
+import org.wgpu4j.resource.Instance;
+import org.wgpu4j.descriptor.AdapterRequestOptions;
+import org.wgpu4j.descriptor.TextureDescriptor;
+import org.wgpu4j.constant.PowerPreference;
+import org.wgpu4j.constant.TextureFormat;
 
 import static org.junit.jupiter.api.Assertions.*;
 

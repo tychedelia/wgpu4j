@@ -1,10 +1,10 @@
 package org.wgpu4j;
 
 import org.junit.jupiter.api.Test;
-import org.wgpu4j.core.*;
-import org.wgpu4j.descriptors.*;
-import org.wgpu4j.enums.BufferUsage;
-import org.wgpu4j.enums.PowerPreference;
+import org.wgpu4j.resource.*;
+import org.wgpu4j.descriptor.*;
+import org.wgpu4j.constant.BufferUsage;
+import org.wgpu4j.constant.PowerPreference;
 
 import java.util.concurrent.TimeUnit;
 

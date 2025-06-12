@@ -3,8 +3,8 @@ package org.wgpu4j.utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wgpu4j.WgpuException;
-import org.wgpu4j.core.Instance;
-import org.wgpu4j.core.Surface;
+import org.wgpu4j.resource.Instance;
+import org.wgpu4j.resource.Surface;
 import org.wgpu4j.bindings.*;
 
 import java.lang.foreign.*;
